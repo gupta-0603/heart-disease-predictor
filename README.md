@@ -189,6 +189,6 @@ MIT License — free to use, modify, and distribute with attribution.
 
 ## 👤 Author
 
-**[Your Name]**
-- GitHub: [@yourusername](https://github.com/gupta-0603)
-- LinkedIn: [linkedin.com/in/yourprofile]([https://linkedin.com/in/yourprofile](https://www.linkedin.com/in/aditya-kumar-827616291/))
+**[Aditya Kumar]**
+  [@GitHub](https://github.com/gupta-0603)
+  [@LinkedIn](https://www.linkedin.com/in/aditya-kumar-827616291/)
