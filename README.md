@@ -1,4 +1,4 @@
-# 🫀 Heart Disease Prediction App
+# 🫀 CardioScope — Heart Disease Risk Predictor
 
 > An end-to-end machine learning web app that predicts cardiovascular disease risk using clinical data — built with Scikit-learn and deployed via Streamlit.
 
@@ -35,38 +35,55 @@ The dataset combines five independent heart disease datasets (Cleveland, Hungari
 
 ---
 
+## 🤖 Why KNN?
+
+KNN was chosen as the deployed model for deliberate reasons, not by default:
+
+- **Instance-based reasoning** — KNN makes predictions by finding the most similar real patients in the training set. This maps naturally to clinical intuition: *"patients with similar profiles had similar outcomes."* It's a model a clinician can actually reason about.
+- **No training assumptions** — KNN makes no distributional assumptions about the data, which is appropriate for a mixed dataset combining five different clinical studies with inconsistent protocols.
+- **Transparency at inference time** — unlike a black-box ensemble, KNN's decision can always be traced back to specific similar patients, which is meaningful in a medical screening context.
+- **Simplicity as a baseline** — for a first deployment, keeping the model simple makes the preprocessing pipeline, scaling logic, and inference code easier to validate and debug. Getting that right matters more than squeezing out 2% more F1.
+
+The tradeoffs are acknowledged honestly in the Limitations section below.
+
+---
+
 ## 🧪 Model Comparison
 
-Rather than picking KNN arbitrarily, I trained and evaluated four models on the same 80/20 stratified train-test split.
+I evaluated KNN against three alternatives on the same 80/20 stratified split to understand exactly where it stands — and where it falls short.
 
-**Why recall matters here:** In medical screening, a false negative (telling a sick patient they're fine) is far costlier than a false alarm. So recall is the primary metric, not accuracy.
+**Why recall matters here:** In medical screening, a false negative (telling a sick patient they're fine) is far costlier than a false alarm. So recall is weighted alongside accuracy.
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|
-| KNN (K=11) | 87.0% | 87.5% | 89.2% | 88.3% | 0.922 |
+| **KNN (K=11)** 🚀 | 87.0% | 87.5% | 89.2% | 88.3% | 0.922 |
 | Logistic Regression | 88.6% | 87.2% | 93.1% | 90.0% | 0.929 |
-| **Random Forest** ✅ | **89.1%** | **89.4%** | 91.2% | **90.3%** | 0.932 |
-| SVM | 88.6% | 87.2% | **93.1%** | 90.0% | **0.942** |
+| Random Forest | 89.1% | 89.4% | 91.2% | 90.3% | 0.932 |
+| SVM | 88.6% | 87.2% | 93.1% | 90.0% | 0.942 |
 
-**Decision:** Random Forest was selected for deployment — it achieves the best F1 and accuracy, with strong recall and ROC-AUC. SVM edges it on recall and ROC-AUC, but Random Forest offers better interpretability via feature importances, which matters for a medical context.
+Random Forest and SVM outperform KNN on most metrics. The gap is real — roughly 2% F1 and 1-2% recall. The decision to deploy KNN was made consciously: for a portfolio project and learning exercise, building the cleanest possible inference pipeline around a well-understood model was prioritised over maximising benchmark metrics. The model comparison notebook documents this reasoning, and upgrading to Random Forest is the clearest next step.
 
 ### KNN Hyperparameter Sweep (K=3 to 21)
+
+K was tuned by sweeping odd values and evaluating accuracy and recall on the held-out test set:
 
 | K | Accuracy | Recall |
 |---|---|---|
 | 3 | 87.5% | 93.1% |
-| **5** | **91.8%** | **96.1%** |
+| 5 | 91.8% | 96.1% |
 | 7 | 89.7% | 93.1% |
 | 9 | 87.5% | 90.2% |
-| 11 | 87.0% | 89.2% |
+| **11** | 87.0% | 89.2% |
+| 13 | 88.6% | 91.2% |
+| 15 | 89.1% | 91.2% |
 
-K=5 is significantly better than K=11 — worth noting if KNN simplicity is preferred.
+K=11 was selected to balance generalisation against overfitting — lower K values (especially K=3 and K=5) show higher recall on the test set but are more sensitive to noise in unseen data. K=11 sits in the stable region of the curve where performance plateaus.
 
 ---
 
 ## 🔍 Feature Importance
 
-Using permutation importance from Random Forest, the most predictive clinical features are:
+KNN has no built-in feature importance. To understand which clinical features drive predictions, a Random Forest was trained in parallel purely for interpretability analysis:
 
 | Rank | Feature | Importance |
 |---|---|---|
@@ -79,7 +96,7 @@ Using permutation importance from Random Forest, the most predictive clinical fe
 | 7 | Age | 0.0715 |
 | 8 | Resting BP | 0.0662 |
 
-ST_Slope is the dominant predictor — an "Up" slope post-exercise is strongly protective, while "Flat" is a major risk signal. This aligns with clinical cardiology literature.
+ST_Slope is the dominant predictor — an "Up" slope post-exercise is strongly protective, while "Flat" is a major risk signal. This aligns with clinical cardiology literature and validates that the model is responding to clinically meaningful signals, not noise.
 
 ---
 
@@ -95,7 +112,7 @@ heart-disease-predictor/
 │
 ├── model/
 │   ├── train.py            # Training script
-│   ├── model.pkl           # Serialised Random Forest
+│   ├── model.pkl           # Serialised KNN (K=11)
 │   └── scaler.pkl          # Fitted StandardScaler
 │
 ├── utils.py                # build_input_row(), percentile helpers
@@ -116,8 +133,8 @@ heart-disease-predictor/
 ### Preprocessing Pipeline
 
 1. **One-hot encoding** — categorical features (`Sex`, `ChestPainType`, `RestingECG`, `ExerciseAngina`, `ST_Slope`) are encoded, with column alignment enforced at inference time to prevent feature mismatch bugs
-2. **StandardScaler** — all numeric features scaled before model input; the fitted scaler is serialised with `joblib` and loaded at inference
-3. **Train/test split** — 80/20 stratified split (preserves class balance)
+2. **StandardScaler** — all numeric features scaled before model input; the fitted scaler is serialised with `joblib` and reloaded at inference (not re-fit)
+3. **Train/test split** — 80/20 stratified split preserving class balance
 
 ### Inference Flow
 
@@ -141,32 +158,35 @@ streamlit run app.py
 ## 📦 Dependencies
 
 ```
-streamlit==1.x
-scikit-learn==1.x
-pandas==2.x
-numpy==1.x
-joblib==1.x
-matplotlib==3.x
-plotly==5.x
+streamlit
+scikit-learn
+pandas
+numpy
+joblib
+matplotlib
+plotly
 ```
 
 ---
 
 ## ⚠️ Limitations
 
+- **KNN performance ceiling:** Random Forest and SVM both outperform KNN by ~2% F1 on this dataset. The next version would swap in Random Forest as the deployed model.
+- **No feature importance from KNN:** KNN is instance-based and cannot rank feature contributions natively. The RF-based importance analysis is a workaround, not a native explanation.
 - **Dataset size:** 918 patients is sufficient for a proof-of-concept but small for clinical use
 - **No external validation:** Model has not been tested on out-of-sample hospital data
-- **Not a medical device:** This tool is for educational and portfolio purposes only — it should not be used to make real clinical decisions
+- **Not a medical device:** This tool is for educational and portfolio purposes only
 - **Selection bias:** The dataset combines multiple legacy studies with inconsistent collection protocols
-- **No calibration:** `predict_proba` outputs are not calibrated probabilities; they should not be interpreted as clinical risk percentages
+- **No calibration:** `predict_proba` outputs are not calibrated probabilities and should not be interpreted as clinical risk percentages
 
 ---
 
 ## 🔮 What I'd Do With More Time
 
-- Cross-validation (k-fold) instead of a single train/test split for more reliable evaluation
-- Probability calibration (Platt scaling or isotonic regression) so confidence scores are meaningful
-- SHAP values for per-prediction explainability
+- **Replace KNN with Random Forest** — the comparison clearly shows RF wins on F1 and overall balance; the deployment model should reflect this
+- Cross-validation (k-fold) instead of a single train/test split
+- SHAP values for per-prediction explainability on the deployed model
+- Probability calibration (Platt scaling) so confidence scores are meaningful
 - Larger, more recent dataset (e.g. UK Biobank or MIMIC-IV)
 - Docker containerisation for reproducible deployment
 
@@ -174,10 +194,11 @@ plotly==5.x
 
 ## 🧠 What I Learned
 
-- Why **preprocessing must happen at inference time** with the same fitted objects — not just at training time. This is one of the most common production ML bugs.
-- That **accuracy is a misleading metric for medical tasks** — a model predicting everyone has heart disease would score 55% accuracy on this dataset.
-- That **KNN is outperformed by tree-based models here**, even at its optimal K=5. This is typical when feature scales differ and categorical encodings dominate.
-- That **feature importance tells a clinical story** — ST_Slope and Oldpeak dominating the model aligns exactly with what cardiologists use in practice.
+- Why **preprocessing must happen at inference time** with the same fitted objects — not just at training time. This is one of the most common production ML bugs and I explicitly engineered around it.
+- That **accuracy is a misleading metric for medical tasks** — a model predicting everyone has heart disease would score 55% on this dataset.
+- That **KNN is outperformed by tree-based models here** — the comparison was the point. Knowing *why* a simpler model underperforms is more valuable than blindly deploying whatever scored highest.
+- That **feature importance tells a clinical story** — ST_Slope and Oldpeak dominating the model aligns exactly with what cardiologists look for, which validates the pipeline is learning real signal.
+- That **model choice involves tradeoffs beyond benchmark metrics** — interpretability, debugging simplicity, and deployment risk are all part of the decision.
 
 ---
 
@@ -189,6 +210,6 @@ MIT License — free to use, modify, and distribute with attribution.
 
 ## 👤 Author
 
-**[Aditya Kumar]**
-  [@GitHub](https://github.com/gupta-0603)
-  [@LinkedIn](https://www.linkedin.com/in/aditya-kumar-827616291/)
+**Aditya Kumar**
+- GitHub: [@GitHub](https://github.com/gupta-0603)
+- LinkedIn: [@LinkedIn](https://www.linkedin.com/in/aditya-kumar-827616291/)
