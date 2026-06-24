@@ -1,16 +1,16 @@
-# 🫀 CardioScope — Heart Disease Risk Predictor
+#  CardioScope — Heart Disease Risk Predictor
 
 > An end-to-end machine learning web app that predicts cardiovascular disease risk using clinical data — built with Scikit-learn and deployed via Streamlit.
 
 ---
 
-## 🔗 Live Demo
+##  Live Demo
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://heart-disease-predictor-klcswckn9brltyxpnqfx4k.streamlit.app/)
 
 ---
 
-## 📌 Overview
+##  Overview
 
 Heart disease is the leading cause of death globally. Early screening using routine clinical measurements can significantly improve outcomes. This project builds a full ML pipeline — from raw data to a deployed interactive web application — that estimates a patient's likelihood of heart disease based on 11 clinical features.
 
@@ -18,7 +18,7 @@ The app lets users input patient data via a form, returns a real-time prediction
 
 ---
 
-## 📊 Dataset
+##  Dataset
 
 **Source:** [Heart Failure Prediction Dataset — Kaggle](https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction)
 
@@ -35,7 +35,7 @@ The dataset combines five independent heart disease datasets (Cleveland, Hungari
 
 ---
 
-## 🤖 Why KNN?
+##  Why KNN?
 
 KNN was chosen as the deployed model for deliberate reasons, not by default:
 
@@ -48,7 +48,7 @@ The tradeoffs are acknowledged honestly in the Limitations section below.
 
 ---
 
-## 🧪 Model Comparison
+##  Model Comparison
 
 I evaluated KNN against three alternatives on the same 80/20 stratified split to understand exactly where it stands — and where it falls short.
 
@@ -56,7 +56,7 @@ I evaluated KNN against three alternatives on the same 80/20 stratified split to
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|
-| **KNN (K=11)** 🚀 | 87.0% | 87.5% | 89.2% | 88.3% | 0.922 |
+| **KNN (K=11)**  | 87.0% | 87.5% | 89.2% | 88.3% | 0.922 |
 | Logistic Regression | 88.6% | 87.2% | 93.1% | 90.0% | 0.929 |
 | Random Forest | 89.1% | 89.4% | 91.2% | 90.3% | 0.932 |
 | SVM | 88.6% | 87.2% | 93.1% | 90.0% | 0.942 |
@@ -81,7 +81,7 @@ K=11 was selected to balance generalisation against overfitting — lower K valu
 
 ---
 
-## 🔍 Feature Importance
+##  Feature Importance
 
 KNN has no built-in feature importance. To understand which clinical features drive predictions, a Random Forest was trained in parallel purely for interpretability analysis:
 
@@ -100,7 +100,7 @@ ST_Slope is the dominant predictor — an "Up" slope post-exercise is strongly p
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 heart-disease-predictor/
@@ -128,7 +128,7 @@ heart-disease-predictor/
 
 ---
 
-## ⚙️ How It Works
+##  How It Works
 
 ### Preprocessing Pipeline
 
@@ -144,7 +144,7 @@ User inputs → build_input_row() → one-hot encode → align columns → scale
 
 ---
 
-## 🚀 Running Locally
+##  Running Locally
 
 ```bash
 git clone https://github.com/gupta-0603/heart-disease-predictor.git
@@ -155,7 +155,7 @@ streamlit run app.py
 
 ---
 
-## 📦 Dependencies
+##  Dependencies
 
 ```
 streamlit
@@ -169,7 +169,7 @@ plotly
 
 ---
 
-## ⚠️ Limitations
+##  Limitations
 
 - **KNN performance ceiling:** Random Forest and SVM both outperform KNN by ~2% F1 on this dataset. The next version would swap in Random Forest as the deployed model.
 - **No feature importance from KNN:** KNN is instance-based and cannot rank feature contributions natively. The RF-based importance analysis is a workaround, not a native explanation.
@@ -181,7 +181,7 @@ plotly
 
 ---
 
-## 🔮 What I'd Do With More Time
+##  What I'd Do With More Time
 
 - **Replace KNN with Random Forest** — the comparison clearly shows RF wins on F1 and overall balance; the deployment model should reflect this
 - Cross-validation (k-fold) instead of a single train/test split
@@ -192,7 +192,7 @@ plotly
 
 ---
 
-## 🧠 What I Learned
+##  What I Learned
 
 - Why **preprocessing must happen at inference time** with the same fitted objects — not just at training time. This is one of the most common production ML bugs and I explicitly engineered around it.
 - That **accuracy is a misleading metric for medical tasks** — a model predicting everyone has heart disease would score 55% on this dataset.
@@ -202,13 +202,7 @@ plotly
 
 ---
 
-## 📄 License
-
-MIT License — free to use, modify, and distribute with attribution.
-
----
-
-## 👤 Author
+##  Author
 
 **Aditya Kumar**
 - GitHub: [@GitHub](https://github.com/gupta-0603)
